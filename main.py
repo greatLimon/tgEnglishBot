@@ -1,5 +1,10 @@
+from bot.handlers import start
+
+def start_bot():
+    start()
+    
 def main():
-    pass
+    start_bot()
 
 if __name__ == '__main__':
     main()
