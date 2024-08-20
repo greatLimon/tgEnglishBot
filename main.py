@@ -1,4 +1,4 @@
-from bot.handlers import start
+from app.bot.handlers import start
 
 def start_bot():
     start()
