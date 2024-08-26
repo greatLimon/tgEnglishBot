@@ -83,7 +83,7 @@ def get_db():
 def main()->bool:
     db = get_db()
     bot = get_tg_bot()
-    asyncio.run(start_pooling(bot))
+    asyncio.run(start_pooling(bot, db))
 
 
 if __name__ == '__main__':

@@ -24,8 +24,8 @@ class UsersWords(Base):
 
 class Messages(Base):
     __tablename__ = 'messages'
-    id = sq.Column(sq.Integer, primary_key = True)
-    text = sq.Column(sq.String(length = 60), unique = False, nullable = False)
+    id = sq.Column(sq.String, primary_key = True)
+    text = sq.Column(sq.String(length = 1024), unique = False, nullable = False)
 
 def recreate_tables(engine:sq.engine)->sq.orm.session.Session:
     Base.metadata.drop_all(engine)
