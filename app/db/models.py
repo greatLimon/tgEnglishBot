@@ -1,5 +1,20 @@
 import sqlalchemy as sq
 from sqlalchemy.orm import declarative_base, relationship, sessionmaker
+from app.config import read_env, input_DSN
+from sqlalchemy.exc import ArgumentError
+
+try:
+    engine = sq.create_engine(read_env('DSN'))
+    print('DB is active')
+except ArgumentError:
+    try:
+        engine = sq.create_engine(input_DSN())
+        print('DB is active')
+    except ArgumentError:
+        print('This DSN key is invalid!')
+        exit()
+Session = sessionmaker(bind=engine)()
+
 
 Base = declarative_base()
 
@@ -27,11 +42,9 @@ class Messages(Base):
     id = sq.Column(sq.String, primary_key = True)
     text = sq.Column(sq.String(length = 1024), unique = False, nullable = False)
 
-def recreate_tables(engine:sq.engine)->sq.orm.session.Session:
+def recreate_tables()->None:
     Base.metadata.drop_all(engine)
-    return create_tables(engine)
+    create_tables(engine)
 
-def create_tables(engine:sq.engine)->sq.orm.session.Session:
+def create_tables()->None:
     Base.metadata.create_all(engine)
-    Session = sessionmaker(bind = engine)
-    return Session()
