@@ -5,7 +5,7 @@ from aiogram.utils.token import TokenValidationError
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
 
-from app.db.handlers import get_message, get_user_words, create_user, get_user_async
+from app.db.handlers import get_message, get_user_words, create_user, get_user_async, add_word_to_DB, delete_word_from_DB
 import app.bot.keyboards as kb
 from app.config import read_env, input_token
 
@@ -143,7 +143,7 @@ async def add_word2(message:types.Message, state:FSMContext):
     user = data['user']
     word_ru = data['word_ru']
     word_en = message.text
-    # add to DB func
+    add_word_to_DB(word_ru, word_en, user.user_id)
     await message.reply(ENTER_WORD_END,reply_markup=None)
     user.play_next()
     await state.set_state(Game.playing)
@@ -169,11 +169,20 @@ async def delete_word1(message:types.Message, state:FSMContext):
 
 @dp.message(Game.delete_en)
 async def delete_word2(message:types.Message, state:FSMContext):
-    await state.update_data(word_en = message.text)
     # check does word exist
+    data = state.get_data()
+    user = data['user']
+    word_to_delete_ru = data['word_ru']
+    word_to_delete_en = data['word_en']
+    if not (word_to_delete_ru, word_to_delete_en) in user.user_words:
+        await state.set_state(Game.playing)
+        await message.answer(DELETE_WORD_CANCEL)
     # if exist
-    await state.set_state(Game.delete_sure)
-    await message.answer(DELETE_WORD_SURE,reply_markup=kb.yes_no_keyboard)
+    else:
+        # delete from DB
+        await delete_word_from_DB(word_to_delete_ru, word_to_delete_en, user.user_id)
+        await state.set_state(Game.delete_sure)
+        await message.answer(DELETE_WORD_SURE,reply_markup=kb.yes_no_keyboard)
 
 @dp.message(Game.delete_sure)
 async def delete_word_sure(message:types.Message, state:FSMContext):
