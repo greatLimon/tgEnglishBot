@@ -3,18 +3,6 @@ from sqlalchemy.orm import declarative_base, relationship, sessionmaker
 from app.config import read_env, input_DSN
 from sqlalchemy.exc import ArgumentError
 
-try:
-    engine = sq.create_engine(read_env('DSN'))
-except ArgumentError:
-    try:
-        engine = sq.create_engine(input_DSN())
-        print('DB is active')
-    except ArgumentError:
-        print('This DSN key is invalid!')
-        exit()
-Session = sessionmaker(bind=engine)()
-
-
 Base = declarative_base()
 
 class Users(Base):
@@ -41,9 +29,30 @@ class Messages(Base):
     id = sq.Column(sq.String, primary_key = True)
     text = sq.Column(sq.String(length = 1024), unique = False, nullable = False)
 
-def recreate_tables()->None:
-    Base.metadata.drop_all(engine)
-    create_tables()
+# def recreate_tables()->None:
+#     Base.metadata.drop_all(engine)
+#     create_tables()
 
 def create_tables()->None:
     Base.metadata.create_all(engine)
+
+try:
+    engine = sq.create_engine(read_env('DSN'))
+except ArgumentError:
+    try:
+        engine = sq.create_engine(input_DSN())
+        print('DB is active')
+    except ArgumentError:
+        print('This DSN key is invalid!')
+        exit()
+Session = sessionmaker(bind=engine)()
+# answ = input('Would you like to recreate DB[y/n]: ')
+# if answ.lower() == 'y':
+#     try:
+#         recreate_tables()
+#     except ArgumentError:
+#             input_DSN()
+#             print('You need to restart programm')
+#             exit()
+# else:
+create_tables()

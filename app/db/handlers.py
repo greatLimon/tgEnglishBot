@@ -1,20 +1,28 @@
 import sqlalchemy as sq
-from app.db.models import recreate_tables, create_tables, Users, Words, Messages, UsersWords, Session
+from sqlalchemy.exc import ArgumentError
 import psycopg2
-
+from app.db.models import Users, Words, Messages, UsersWords, Session
+from app.config import return_default_values
 
 def start_db():
-    recreate_tables()
-    # create_tables()
+    answ = input('Fill DB default values?[y/n]: ')
+    if answ.lower() == 'y':
+        data = return_default_values()
+        for words in data['Words']:
+            create_words(words[1], words[0])
+        for message_id, message in data['Messages'].items():
+            create_messages(message_id, message)
+        print('You need to restart program!')
     print('DB is active')
-    # add try except for ArgumentError like in model
-    # add insterts default values except Words like I, You etc. 
 
 def get_message(message:str) -> str:
-    q = Session.query(Messages).filter(Messages.id == message).all()
-    if len(q) > 0:
-        return q[0].text
-    else: return message
+    try:
+        q = Session.query(Messages).filter(Messages.id == message).all()
+        if len(q) > 0:
+            return q[0].text
+        else: return message
+    except:
+        return message
 
 async def get_user_async(user_id:int)->int|None:
     q = Session.query(Users).filter(Users.id == user_id).all()
@@ -31,6 +39,12 @@ async def get_user_words_async(user_id:int)->list:
             q_words = Session.query(Words).filter(Words.id == words.id).all()
             words_list.append((q_words[0].word_ru, q_words[0].word_en))
     return words_list
+
+async def find_word(word_ru:str, word_en:str)->bool:
+    q_exist = Session.query(Words).filter(Words.word_ru == word_ru, Words.word_en == word_en).all()
+    if len(q_exist) == 0:
+        return False
+    else: return q_exist[0]
 
 def get_user(user_id:int)->int|None:
     q = Session.query(Users).filter(Users.id == user_id).all()
@@ -58,16 +72,23 @@ async def create_user(user_id:int, name:str)->bool:
     except:
         return False
     
-async def find_word(word_ru:str, word_en:str)->bool:
-    q_exist = Session.query(Words).filter(Words.word_ru == word_ru, Words.word_en == word_en).all()
-    if len(q_exist) == 0:
-        return False
-    else: return q_exist[0]
+def create_words(word_ru:str, word_en:str)->bool:
+    Session.add(Words(word_ru = word_ru, word_en = word_en))
+    Session.commit()
+
+def create_messages(message_id:str, message:str)->bool:
+    Session.add(Messages(id = message_id, text = message))
+    Session.commit()
 
 async def add_word_to_DB(word_ru:str, word_en:str, user_id:int)->bool:
-    if find_word(word_ru, word_en) == False:
-        new_word = Session.add(Words(word_en = word_en, word_ru = word_ru))
-    Session.add(UsersWords(user_id = user_id, word_id = new_word))
+    if await find_word(word_ru, word_en) == False:
+        Session.add(Words(word_en = word_en, word_ru = word_ru))
+    try:
+        Session.commit()
+    except:
+        return False
+    new_word = Session.query(Words).filter(Words.word_ru == word_ru, Words.word_en == word_en).all()
+    Session.add(UsersWords(user_id = user_id, word_id = new_word[0].id))
     try:
         Session.commit()
         return True
