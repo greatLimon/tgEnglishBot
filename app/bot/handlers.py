@@ -143,7 +143,7 @@ async def add_word2(message:types.Message, state:FSMContext):
     user = data['user']
     word_ru = data['word_ru']
     word_en = message.text
-    add_word_to_DB(word_ru, word_en, user.user_id)
+    await add_word_to_DB(word_ru, word_en, user.user_id)
     await message.reply(ENTER_WORD_END,reply_markup=None)
     user.play_next()
     await state.set_state(Game.playing)
