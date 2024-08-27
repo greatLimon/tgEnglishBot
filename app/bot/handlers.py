@@ -79,7 +79,7 @@ async def cmd_start(message: types.Message):
     
 @dp.message(F.text == kb.REGISTER_MESSAGE)
 async def cmd_next(message: types.Message, state:FSMContext):
-    if await get_user_async(message.chat.id) == None:
+    if await get_user_async(message.chat.id) == False:
         await create_user(message.chat.id, message.chat.full_name)
     await state.set_state(Game.playing)
     user = User(message.chat.id)

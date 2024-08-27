@@ -5,7 +5,6 @@ from sqlalchemy.exc import ArgumentError
 
 try:
     engine = sq.create_engine(read_env('DSN'))
-    print('DB is active')
 except ArgumentError:
     try:
         engine = sq.create_engine(input_DSN())
@@ -44,7 +43,7 @@ class Messages(Base):
 
 def recreate_tables()->None:
     Base.metadata.drop_all(engine)
-    create_tables(engine)
+    create_tables()
 
 def create_tables()->None:
     Base.metadata.create_all(engine)

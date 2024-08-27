@@ -4,7 +4,11 @@ import psycopg2
 
 
 def start_db():
-    create_tables()
+    recreate_tables()
+    # create_tables()
+    print('DB is active')
+    # add try except for ArgumentError like in model
+    # add insterts default values except Words like I, You etc. 
 
 def get_message(message:str) -> str:
     q = Session.query(Messages).filter(Messages.id == message).all()
@@ -12,7 +16,7 @@ def get_message(message:str) -> str:
         return q[0].text
     else: return message
 
-async def get_user_async(user_id:int)->int:
+async def get_user_async(user_id:int)->int|None:
     q = Session.query(Users).filter(Users.id == user_id).all()
     if len(q) == 0:
         return None
@@ -28,7 +32,7 @@ async def get_user_words_async(user_id:int)->list:
             words_list.append((q_words[0].word_ru, q_words[0].word_en))
     return words_list
 
-def get_user(user_id:int)->int:
+def get_user(user_id:int)->int|None:
     q = Session.query(Users).filter(Users.id == user_id).all()
     if len(q) == 0:
         return None
