@@ -83,10 +83,10 @@ def create_messages(message_id:str, message:str)->bool:
 async def add_word_to_DB(word_ru:str, word_en:str, user_id:int)->bool:
     if await find_word(word_ru, word_en) == False:
         Session.add(Words(word_en = word_en, word_ru = word_ru))
-    try:
-        Session.commit()
-    except:
-        return False
+        try:
+            Session.commit()
+        except:
+            return False
     new_word = Session.query(Words).filter(Words.word_ru == word_ru, Words.word_en == word_en).all()
     Session.add(UsersWords(user_id = user_id, word_id = new_word[0].id))
     try:
@@ -96,9 +96,9 @@ async def add_word_to_DB(word_ru:str, word_en:str, user_id:int)->bool:
         return False
     
 async def delete_word_from_DB(word_ru:str, word_en:str, user_id:int)->bool:
-    findest_word = find_word(word_en=word_en, word_ru=word_ru)
+    findest_word = await find_word(word_en=word_en, word_ru=word_ru)
     check_user_words = Session.query(UsersWords).filter(UsersWords.word_id == findest_word.id)
-    if len(check_user_words.all()) > 1:
+    if len(check_user_words.all()) > 2:
         Session.query(UsersWords).filter(UsersWords.user_id == user_id, UsersWords.word_id == find_word.id).delete()
         Session.query(Words).filter(Words.id == findest_word.id)
     else:

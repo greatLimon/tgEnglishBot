@@ -64,6 +64,9 @@ class User():
             result_list.append(index)
             index_list.remove(index)
         return result_list
+    
+    def update_words(self):
+        self.user_words = get_user_words(self.user_id)
 
 class Game(StatesGroup):
     playing = State()
@@ -145,6 +148,7 @@ async def add_word2(message:types.Message, state:FSMContext):
     word_en = message.text
     await add_word_to_DB(word_ru, word_en, user.user_id)
     await message.reply(ENTER_WORD_END,reply_markup=None)
+    user.update_words()
     user.play_next()
     await state.set_state(Game.playing)
     await state.update_data(user = user)
@@ -170,10 +174,10 @@ async def delete_word1(message:types.Message, state:FSMContext):
 @dp.message(Game.delete_en)
 async def delete_word2(message:types.Message, state:FSMContext):
     # check does word exist
-    data = state.get_data()
+    data = await state.get_data()
     user = data['user']
     word_to_delete_ru = data['word_ru']
-    word_to_delete_en = data['word_en']
+    word_to_delete_en = message.text
     if not (word_to_delete_ru, word_to_delete_en) in user.user_words:
         await state.set_state(Game.playing)
         await message.answer(DELETE_WORD_CANCEL)
