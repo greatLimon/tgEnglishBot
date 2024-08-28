@@ -14,6 +14,7 @@ def start_db():
             create_messages(message_id, message)
         print('You need to restart program!')
         os.remove('app/db/default_values.json')
+        exit()
     print('DB is active')
 
 def get_message(message:str) -> str:
@@ -103,7 +104,7 @@ async def delete_word_from_DB(word_ru:str, word_en:str, user_id:int)->bool:
             check_user_words = Session.query(UsersWords).filter(UsersWords.word_id == found_word.id)
             if len(check_user_words.all()) < 2:
                 Session.query(UsersWords).filter(UsersWords.user_id == user_id, UsersWords.word_id == found_word.id).delete()
-                Session.query(Words).filter(Words.id == found_word.id)
+                Session.query(Words).filter(Words.id == found_word.id).delete()
             else:
                 Session.query(UsersWords).filter(UsersWords.user_id == user_id, UsersWords.word_id == found_word.id).delete()
             try:

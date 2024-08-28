@@ -104,7 +104,8 @@ async def check_word(message:types.Message, state:FSMContext):
         user.play_next()
         await state.set_state(Game.playing)
         await state.update_data(user = user)
-        await message.reply(CORRECT_ANSWER + f' {user.user_words[user.right_word_index][0]}', reply_markup=await kb.main_keyboard(user.user_words[user.word_indexes[0]][1],
+        await message.reply(CORRECT_ANSWER)
+        await message.answer(GAME_MESSAGE + f' {user.user_words[user.right_word_index][0]}', reply_markup=await kb.main_keyboard(user.user_words[user.word_indexes[0]][1],
                                                                            user.user_words[user.word_indexes[1]][1],
                                                                            user.user_words[user.word_indexes[2]][1],
                                                                            user.user_words[user.word_indexes[3]][1]))
