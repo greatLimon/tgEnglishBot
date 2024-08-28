@@ -46,13 +46,4 @@ except ArgumentError:
         print('This DSN key is invalid!')
         exit()
 Session = sessionmaker(bind=engine)()
-# answ = input('Would you like to recreate DB[y/n]: ')
-# if answ.lower() == 'y':
-#     try:
-#         recreate_tables()
-#     except ArgumentError:
-#             input_DSN()
-#             print('You need to restart programm')
-#             exit()
-# else:
 create_tables()

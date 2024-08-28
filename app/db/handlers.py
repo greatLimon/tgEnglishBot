@@ -1,18 +1,19 @@
 import sqlalchemy as sq
 from sqlalchemy.exc import ArgumentError
 import psycopg2
+import os
 from app.db.models import Users, Words, Messages, UsersWords, Session
 from app.config import return_default_values
 
 def start_db():
-    answ = input('Fill DB default values?[y/n]: ')
-    if answ.lower() == 'y':
+    if os.path.exists('app/db/default_values.json'):
         data = return_default_values()
         for words in data['Words']:
             create_words(words[1], words[0])
         for message_id, message in data['Messages'].items():
             create_messages(message_id, message)
         print('You need to restart program!')
+        os.remove('app/db/default_values.json')
     print('DB is active')
 
 def get_message(message:str) -> str:
@@ -96,15 +97,18 @@ async def add_word_to_DB(word_ru:str, word_en:str, user_id:int)->bool:
         return False
     
 async def delete_word_from_DB(word_ru:str, word_en:str, user_id:int)->bool:
-    findest_word = await find_word(word_en=word_en, word_ru=word_ru)
-    check_user_words = Session.query(UsersWords).filter(UsersWords.word_id == findest_word.id)
-    if len(check_user_words.all()) > 2:
-        Session.query(UsersWords).filter(UsersWords.user_id == user_id, UsersWords.word_id == find_word.id).delete()
-        Session.query(Words).filter(Words.id == findest_word.id)
-    else:
-        Session.query(UsersWords).filter(UsersWords.user_id == user_id, UsersWords.word_id == find_word.id).delete()
-    try:
-        Session.commit()
-        return True
-    except:
-        return False
+    found_word = await find_word(word_en=word_en, word_ru=word_ru)
+    if found_word != False:
+        if not found_word.id in (1,2,3,4):
+            check_user_words = Session.query(UsersWords).filter(UsersWords.word_id == found_word.id)
+            if len(check_user_words.all()) < 2:
+                Session.query(UsersWords).filter(UsersWords.user_id == user_id, UsersWords.word_id == found_word.id).delete()
+                Session.query(Words).filter(Words.id == found_word.id)
+            else:
+                Session.query(UsersWords).filter(UsersWords.user_id == user_id, UsersWords.word_id == found_word.id).delete()
+            try:
+                Session.commit()
+                return True
+            except:
+                return False
+    return False

@@ -8,6 +8,8 @@ REGISTER_MESSAGE = get_message('register_message')
 YES_BUTTON = get_message('yes_button')
 NO_BUTTON = get_message('no_button')
 
+none_keyboard = ReplyKeyboardMarkup(keyboard=[])
+
 yes_no_keyboard = ReplyKeyboardMarkup(keyboard=[
     [KeyboardButton(text = YES_BUTTON), KeyboardButton(text= NO_BUTTON)]
 ], resize_keyboard= True)

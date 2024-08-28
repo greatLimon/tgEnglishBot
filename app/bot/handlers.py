@@ -15,7 +15,7 @@ dp = Dispatcher()
 
 START_MESSAGE = get_message('start_message')
 GAME_MESSAGE = get_message('game_message')
-MENU_MESSAGE = get_message('menu_message')
+# MENU_MESSAGE = get_message('menu_message')
 CORRECT_ANSWER = get_message('correct_answer')
 INCORRECT_MESSAGE = get_message('incorrect_message')
 ENTER_WORD_RU = get_message('enter_word_ru')
@@ -25,7 +25,6 @@ DELETE_WORD_RU = get_message('delete_word_ru')
 DELETE_WORD_EN = get_message('delete_word_en')
 DELETE_WORD_END = get_message('delete_word_end')
 DELETE_WORD_SURE = get_message('delete_word_sure')
-DELETE_WORD_END = get_message('delete_word_end')
 DELETE_WORD_CANCEL = get_message('delete_word_cancel')
 
 async def start_bot()->None:
@@ -67,6 +66,7 @@ class User():
     
     def update_words(self):
         self.user_words = get_user_words(self.user_id)
+        self.play_next()
 
 class Game(StatesGroup):
     playing = State()
@@ -75,12 +75,14 @@ class Game(StatesGroup):
     delete_sure = State()
     delete_ru = State()
     delete_en = State()
-
+    register = State()
+        
 @dp.message(Command('start'))
-async def cmd_start(message: types.Message):
+async def cmd_start(message: types.Message, state:FSMContext):
+    await state.set_state(Game.register)
     await message.answer(START_MESSAGE, reply_markup=await kb.register_keyboard())
     
-@dp.message(F.text == kb.REGISTER_MESSAGE)
+@dp.message(Game.register, F.text == kb.REGISTER_MESSAGE)
 async def cmd_next(message: types.Message, state:FSMContext):
     if await get_user_async(message.chat.id) == None:
         await create_user(message.chat.id, message.chat.full_name)
@@ -132,13 +134,13 @@ async def check_word(message:types.Message, state:FSMContext):
 @dp.message(Game.playing, F.text == kb.ADD_WORD_MESSAGE)
 async def add_word(message:types.Message, state:FSMContext):
     await state.set_state(Game.add_ru)
-    await message.answer(ENTER_WORD_RU, reply_markup=None)
+    await message.answer(ENTER_WORD_RU, reply_markup=kb.none_keyboard)
 
 @dp.message(Game.add_ru)
 async def add_word1(message:types.Message, state:FSMContext):
     await state.update_data(word_ru = message.text)
     await state.set_state(Game.add_en)
-    await message.answer(ENTER_WORD_EN,reply_markup=None)
+    await message.answer(ENTER_WORD_EN,reply_markup=kb.none_keyboard)
 
 @dp.message(Game.add_en)
 async def add_word2(message:types.Message, state:FSMContext):
@@ -147,7 +149,7 @@ async def add_word2(message:types.Message, state:FSMContext):
     word_ru = data['word_ru']
     word_en = message.text
     await add_word_to_DB(word_ru, word_en, user.user_id)
-    await message.reply(ENTER_WORD_END,reply_markup=None)
+    await message.reply(ENTER_WORD_END,reply_markup=kb.none_keyboard)
     user.update_words()
     user.play_next()
     await state.set_state(Game.playing)
@@ -163,13 +165,13 @@ async def add_word2(message:types.Message, state:FSMContext):
 @dp.message(Game.playing, F.text == kb.DELETE_WORD_MESSAGE)
 async def delete_word(message:types.Message, state:FSMContext):
     await state.set_state(Game.delete_ru)
-    await message.answer(DELETE_WORD_RU,reply_markup=None)
+    await message.answer(DELETE_WORD_RU,reply_markup=kb.none_keyboard)
 
 @dp.message(Game.delete_ru)
 async def delete_word1(message:types.Message, state:FSMContext):
     await state.update_data(word_ru = message.text)
     await state.set_state(Game.delete_en)
-    await message.answer(DELETE_WORD_EN,reply_markup=None)
+    await message.answer(DELETE_WORD_EN,reply_markup=kb.none_keyboard)
 
 @dp.message(Game.delete_en)
 async def delete_word2(message:types.Message, state:FSMContext):
@@ -182,29 +184,56 @@ async def delete_word2(message:types.Message, state:FSMContext):
         await state.set_state(Game.playing)
         await message.answer(DELETE_WORD_CANCEL)
     # if exist
-    else:
-        # delete from DB
-        await delete_word_from_DB(word_to_delete_ru, word_to_delete_en, user.user_id)
+    else:        
+        await state.update_data(word_en = message.text)
         await state.set_state(Game.delete_sure)
         await message.answer(DELETE_WORD_SURE,reply_markup=kb.yes_no_keyboard)
 
 @dp.message(Game.delete_sure)
 async def delete_word_sure(message:types.Message, state:FSMContext):
     data = await state.get_data()
-    user = data[user]
+    user = data['user']
+    word_to_delete_ru = data['word_ru']
+    word_to_delete_en = data['word_en']
     await state.set_state(Game.playing)
-    await state.update_data(user)
     if message.text == kb.YES_BUTTON:
         # update db
+        if await delete_word_from_DB(word_to_delete_ru, word_to_delete_en, user.user_id):
+            user.update_words()
+            await state.update_data(user = user)
+            await message.reply(DELETE_WORD_END)
+            await message.answer(GAME_MESSAGE + f' {user.user_words[user.right_word_index][0]}', 
+                                 reply_markup=await kb.main_keyboard(user.user_words[user.word_indexes[0]][1],
+                                                                     user.user_words[user.word_indexes[1]][1],
+                                                                     user.user_words[user.word_indexes[2]][1],
+                                                                     user.user_words[user.word_indexes[3]][1]))
+        else:
+            await message.reply(DELETE_WORD_CANCEL)
+            await message.answer(GAME_MESSAGE + f' {user.user_words[user.right_word_index][0]}', 
+                                 reply_markup=await kb.main_keyboard(user.user_words[user.word_indexes[0]][1],
+                                                                     user.user_words[user.word_indexes[1]][1],
+                                                                     user.user_words[user.word_indexes[2]][1],
+                                                                     user.user_words[user.word_indexes[3]][1]))
         
-        await message.reply(DELETE_WORD_END)
-        await message.reply(GAME_MESSAGE + f' {user.user_words[user.right_word_index][0]}', reply_markup=await kb.main_keyboard(user.user_words[user.word_indexes[0]][1],
-                                                                       user.user_words[user.word_indexes[1]][1],
-                                                                       user.user_words[user.word_indexes[2]][1],
-                                                                       user.user_words[user.word_indexes[3]][1]))
     else:
-        await message.reply(DELETE_WORD_END)
-        await message.reply(GAME_MESSAGE + f' {user.user_words[user.right_word_index][0]}', reply_markup=await kb.main_keyboard(user.user_words[user.word_indexes[0]][1],
-                                                                       user.user_words[user.word_indexes[1]][1],
-                                                                       user.user_words[user.word_indexes[2]][1],
-                                                                       user.user_words[user.word_indexes[3]][1]))
+        await message.reply(DELETE_WORD_CANCEL)
+        await message.answer(GAME_MESSAGE + f' {user.user_words[user.right_word_index][0]}', 
+                             reply_markup=await kb.main_keyboard(user.user_words[user.word_indexes[0]][1],
+                                                                 user.user_words[user.word_indexes[1]][1],
+                                                                 user.user_words[user.word_indexes[2]][1],
+                                                                 user.user_words[user.word_indexes[3]][1]))
+        
+@dp.message()
+async def any_msg(message:types.Message, state:FSMContext):
+    if await get_user_async(message.chat.id) == None:
+        await message.answer('Use /start')
+    else:
+        user = User(message.chat.id)
+        await state.set_state(Game.playing)
+        await state.update_data(user = user)
+        await message.answer(GAME_MESSAGE + f' {user.user_words[user.right_word_index][0]}', 
+                            reply_markup=await kb.main_keyboard(user.user_words[user.word_indexes[0]][1],
+                                                                user.user_words[user.word_indexes[1]][1],
+                                                                user.user_words[user.word_indexes[2]][1],
+                                                                user.user_words[user.word_indexes[3]][1])
+                                                                )
