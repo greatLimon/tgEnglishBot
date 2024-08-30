@@ -1,20 +1,14 @@
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
-from app.db.handlers import get_message
 
-NEXT_MESSAGE = get_message('next_message')
-ADD_WORD_MESSAGE = get_message('add_word_message')
-DELETE_WORD_MESSAGE = get_message('delete_word_message')
-REGISTER_MESSAGE = get_message('register_message')
-YES_BUTTON = get_message('yes_button')
-NO_BUTTON = get_message('no_button')
+async def none_keyboard()->ReplyKeyboardMarkup:
+    return ReplyKeyboardMarkup(keyboard=[])
 
-none_keyboard = ReplyKeyboardMarkup(keyboard=[])
+async def yes_no_keyboard(YES_BUTTON:str, NO_BUTTON:str)->ReplyKeyboardMarkup:
+    return ReplyKeyboardMarkup(keyboard=[
+        [KeyboardButton(text = YES_BUTTON), KeyboardButton(text= NO_BUTTON)]
+    ], resize_keyboard= True)
 
-yes_no_keyboard = ReplyKeyboardMarkup(keyboard=[
-    [KeyboardButton(text = YES_BUTTON), KeyboardButton(text= NO_BUTTON)]
-], resize_keyboard= True)
-
-async def main_keyboard(word1:str, word2:str, word3:str, word4:str)->ReplyKeyboardMarkup:
+async def main_keyboard(word1:str, word2:str, word3:str, word4:str, NEXT_MESSAGE:str, ADD_WORD_MESSAGE:str, DELETE_WORD_MESSAGE:str)->ReplyKeyboardMarkup:
     main = ReplyKeyboardMarkup(keyboard=[
         [KeyboardButton(text = word1), KeyboardButton(text = word2)],
         [KeyboardButton(text = word3), KeyboardButton(text = word4)],
@@ -24,7 +18,7 @@ async def main_keyboard(word1:str, word2:str, word3:str, word4:str)->ReplyKeyboa
         input_field_placeholder='Выберите пункт меню...')
     return main
 
-async def register_keyboard()->ReplyKeyboardMarkup:
+async def register_keyboard(REGISTER_MESSAGE:str)->ReplyKeyboardMarkup:
     register = ReplyKeyboardMarkup(keyboard=[
         [KeyboardButton(text = REGISTER_MESSAGE)]
         ],

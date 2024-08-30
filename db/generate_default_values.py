@@ -31,7 +31,7 @@ def main():
             'no_button' : 'Нет',
         }
     }
-    with open('app/db/default_values.json', 'w') as f:
+    with open('db/default_values.json', 'w') as f:
         json.dump(data, f)
 
 if __name__ == '__main__':

@@ -1,4 +1,3 @@
-import json
 import os
 from dotenv import load_dotenv
 
@@ -47,7 +46,7 @@ def input_token()->str:
     return token
 
 def input_DSN()->str:
-    basetype = 'postgresql'
+    basetype = 'postgresql+asyncpg'
     login = input('Insert database login: ')
     password = input('Insert database password: ')
     port = input('Insert database port: ')
@@ -55,8 +54,3 @@ def input_DSN()->str:
     dsn =  f'{basetype}://{login}:{password}@{port}/{base}'
     write_env(DSN=dsn)
     return dsn
-
-def return_default_values()->dict:
-    with open('app/db/default_values.json', 'r') as f:
-        data = json.load(f)
-    return data
